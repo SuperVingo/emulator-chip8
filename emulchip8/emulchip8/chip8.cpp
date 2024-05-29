@@ -55,28 +55,42 @@ void Chip8::ChipCycle()
 	}
 	case 0x3000: // 0x3xkk - SE Vx, kk
 	{
-		// TODO : Skip Next Instruction if Vx == kk
-		
+		// Skip Next Instruction if Vx == kk
+		if (V[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF))
+			pc += 4;
+		else
+			pc += 2;
 		break;
 	}
 	case 0x4000: // 0x4xkk - SNE Vx, kk
 	{
-		// TODO : Skip Next Instruction if Vx != kk
+		// Skip Next Instruction if Vx != kk
+		if (V[(opcode & 0x0F00) >> 8] != (opcode & 0x00FF))
+			pc += 4;
+		else
+			pc += 2;
 		break;
 	}
 	case 0x5000: // 0x5xy0 - SE Vx, Vy
 	{
-		// TODO : Skip Next Instruction if Vx == Vy
+		// Skip Next Instruction if Vx == Vy
+		if (V[(opcode & 0x0F00) >> 8] == V[(opcode & 0x00F0) >> 4])
+			pc += 4;
+		else
+			pc += 2;
 		break;
 	}
 	case 0x6000: // 0x6xkk - LD Vx, kk
 	{
-		// TODO : Vx = kk
+		// Vx = kk
+		V[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF);
 		break;
 	}
 	case 0x7000: // 0x7xkk - ADD Vx, kk
 	{
-		// TODO : Vx = Vx + kk
+		// Vx = Vx + kk
+		if(V[(opcode & 0x0F00) >> 8])
+		// VX > 255 - KK
 		break;
 	}
 	case 0x8000: 
