@@ -2,6 +2,9 @@
 
 void Chip8::Initialize()
 {
+	// Random Initialize
+	srand(time(NULL));
+
 	// Reset the status of chip8
 	pc = 0x200;
 	opcode = 0;
@@ -24,12 +27,18 @@ void Chip8::ChipCycle()
 		switch (opcode & 0x000F) {
 		case 0x0000: // 0x00E0 - CLS
 		{
-			//TODO : Clear The Display
+			// Clear The Display
+			for (int i = 0; i < 64 * 32; i++)
+				gfx[i] = 0;
+			pc += 2;
 			break;
 		}
 		case 0x000E: // 0x00EE - RET
 		{
-			//TODO : Return From Subroutine
+			// Return From Subroutine
+			sp--;
+			pc = stack[sp];
+			pc += 2;
 			break;
 		}
 		default: // Unknown
@@ -84,88 +93,130 @@ void Chip8::ChipCycle()
 	{
 		// Vx = kk
 		V[(opcode & 0x0F00) >> 8] = (opcode & 0x00FF);
+		pc += 2;
 		break;
 	}
 	case 0x7000: // 0x7xkk - ADD Vx, kk
 	{
 		// Vx = Vx + kk
-		if(V[(opcode & 0x0F00) >> 8])
-		// VX > 255 - KK
+		V[(opcode & 0x0F00) >> 8] += (opcode & 0x00FF);
+		pc += 2;
 		break;
 	}
-	case 0x8000: 
+	case 0x8000:
 	{
 		switch (opcode & 0x000F) {
 		case 0x0000: // 0x8xy0 - LD Vx, Vy
 		{
-			// TODO : Vx = Vy
+			// Vx = Vy
+			V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4];
+			pc += 2;
 			break;
 		}
 		case 0x0001: // 0x8xy1 - OR Vx, Vy
 		{
-			// TODO : Vx = Vx | Vy
+			// Vx = Vx | Vy
+			V[(opcode & 0x0F00) >> 8] |= V[(opcode & 0x00F0) >> 4];
+			pc += 2;
 			break;
 		}
 		case 0x0002: // 0x8xy2 - AND Vx, Vy
 		{
-			// TODO : Vx = Vx & Vy
+			// Vx = Vx & Vy
+			V[(opcode & 0x0F00) >> 8] &= V[(opcode & 0x00F0) >> 4];
+			pc += 2;
 			break;
 		}
 		case 0x0003: // 0x8xy3 - XOR Vx, Vy
 		{
-			// TODO : Vx = Vx ^ Vy
+			// Vx = Vx ^ Vy
+			V[(opcode & 0x0F00) >> 8] ^= V[(opcode & 0x00F0) >> 4];
+			pc += 2;
 			break;
 		}
 		case 0x0004: // 0x8xy4 - ADD Vx, Vy
 		{
-			// TODO : Vx = Vx + Vy, if carry, VF is set to 1. Otherwise 0.
+			// Vx = Vx + Vy, if carry, VF is set to 1. Otherwise 0.
+			if (V[(opcode & 0x0F00) >> 8] > (0xFF - V[(opcode & 0x00F0) >> 4]))
+				V[0xF] = 1;
+			else
+				V[0xF] = 0;
+			V[(opcode & 0x0F00) >> 8] += V[(opcode & 0x00F0) >> 4];
+			pc += 2;
 			break;
 		}
 		case 0x0005: // 0x8xy5 - SUB Vx, Vy
 		{
-			// TODO : Vx = Vx - Vy, if Vx > Vy, VF is set to 1. Otherwise 0.
+			// Vx = Vx - Vy, if Vx > Vy, VF is set to 1. Otherwise 0.
+			if (V[(opcode & 0x00F0) >> 4] > V[(opcode & 0x0F00) >> 8])
+				V[0xF] = 0;
+			else
+				V[0xF] = 1;
+			V[(opcode & 0x0F00) >> 8] -= V[(opcode & 0x00F0) >> 4];
+			pc += 2;
 			break;
 		}
 		case 0x0006: // 0x8xy6 - SHR Vx
 		{
-			// TODO : Vx = Vx SHR 1, if LSB of Vx is set to 1, VF is set to 1. Otherwise 0.
+			// Vx = Vx SHR 1, if LSB of Vx is set to 1, VF is set to 1. Otherwise 0.
+			V[0xF] = V[(opcode & 0x0F00) >> 8] & 0x1;
+			V[(opcode & 0x0F00) >> 8] >>= 1;
+			pc += 2;
 			break;
 		}
 		case 0x0007: // 0x8xy7 - SUBN Vx, Vy
 		{
-			// TODO : Vx = Vy - Vx, if Vy > Vx, VF is set to 1. Otherwise 0.
+			//  Vx = Vy - Vx, if Vy > Vx, VF is set to 1. Otherwise 0.
+			if (V[(opcode & 0x0F00) >> 8] > V[(opcode & 0x00F0) >> 4])
+				V[0xF] = 0;
+			else
+				V[0xF] = 1;
+			V[(opcode & 0x0F00) >> 8] = V[(opcode & 0x00F0) >> 4] - V[(opcode & 0x0F00) >> 8];
+			pc += 2;
 			break;
 		}
 		case 0x000E: // 0x8xyE - SHL Vx
 		{
-			// TODO : Vx = Vx SHL 1, if MSB of Vx is set to 1, VF is set to 1. Otherwise 0.
+			// Vx = Vx SHL 1, if MSB of Vx is set to 1, VF is set to 1. Otherwise 0.
+			V[0xF] = V[(opcode & 0x0F00) >> 8] >> 7;
+			V[(opcode & 0x0F00) >> 8] <<= 1;
+			pc += 2;
 			break;
 		}
 		default: // Unknown Instruction
 		{
-			printf("0x%04X is Unknown Instruction.", opcode); 
+			printf("0x%04X is Unknown Instruction.", opcode);
 			break;
 		}
 		}
 	}
 	case 0x9000: // 0x9xy0 - SNE Vx, Vy
 	{
-		// TODO : Skip next instruction if Vx != Vy
+		// Skip next instruction if Vx != Vy
+		if (V[(opcode & 0x0F00) >> 8] != V[(opcode & 0x00F0) >> 4])
+			pc += 4;
+		else
+			pc += 2;
 		break;
 	}
 	case 0xA000: // 0xAnnn - LD I, Addr
 	{
-		// TODO : I = Addr
+		// I = Addr
+		I = (opcode & 0x0FFF);
+		pc += 2;
 		break;
 	}
 	case 0xB000: // 0xBnnn - JP V0, addr
 	{
-		// TODO : Jump to addr + v0
+		// Jump to addr + v0
+		pc = (opcode & 0x0FFF) + V[0];
 		break;
 	}
 	case 0xC000: // 0xCxkk - RND Vx, kk
 	{
-		// TODO : Vx = Rnd AND kk
+		// Vx = Rnd AND kk
+		V[(opcode & 0x0F00) >> 8] = (rand() % 0xFF) & (opcode & 0x00FF);
+		pc += 2;
 		break;
 	}
 	case 0xD000: // 0xDxyn - DRW Vx, Vy, nibble
@@ -178,12 +229,20 @@ void Chip8::ChipCycle()
 		switch (opcode & 0x00FF) {
 		case 0x009E: // 0xEx9E - SKP Vx 
 		{
-			// TODO : Skip Next Instruction if Vx == key
+			// Skip Next Instruction if Vx == key
+			if (key[V[(opcode & 0x0F00) >> 8]] != 0)
+				pc += 4;
+			else
+				pc += 2;
 			break;
 		}
 		case 0x00A1: // 0xExA1 - SKNP Vx
 		{
-			// TODO : Skip Next Instruction if Vx != Key
+			// Skip Next Instruction if Vx != Key
+			if (key[V[(opcode & 0x0F00) >> 8]] == 0)
+				pc += 4;
+			else
+				pc += 2;
 			break;
 		}
 		default: // Unknown Instruction
@@ -198,7 +257,9 @@ void Chip8::ChipCycle()
 		switch (opcode & 0x00FF) {
 		case 0x0007: // 0xFx07 - LD Vx, DT
 		{
-			// TODO : Vx = Delay Timer
+			// Vx = Delay Timer
+			V[(opcode & 0x0F00) >> 8] = delay_timer;
+			pc += 2;
 			break;
 		}
 		case 0x000A: // 0xFx0A - LD Vx, K
@@ -208,36 +269,61 @@ void Chip8::ChipCycle()
 		}
 		case 0x0015: // 0xFx15 - LD DT, Vx
 		{
-			// TODO : Delay Timer = Vx
+			// Delay Timer = Vx
+			delay_timer = V[(opcode & 0x0F00) >> 8];
+			pc += 2;
 			break;
+		}
 		case 0x0018: // 0xFx18 - LD ST, Vx
 		{
-			// TODO : Sound Timer = Vx
+			// Sound Timer = Vx
+			sound_timer = V[(opcode & 0x0F00) >> 8];
+			pc += 2;
 			break;
 		}
 		case 0x001E: // 0xFx1E - ADD I, Vx
 		{
-			// TODO : I = I + Vx
+			// I = I + Vx
+			if (I + V[(opcode & 0x0F00) >> 8] > 0xFFF)
+				V[0xF] = 1;
+			else
+				V[0xF] = 0;
+			I += V[(opcode & 0x0F00) >> 8];
+			pc += 2;
 			break;
 		}
 		case 0x0029: // 0xFx29 - LD, F, Vx
 		{
-			// TODO : I = The hex digit corresponding Vx
+			// I = The hex digit corresponding Vx
+			I = 0x50 + V[(opcode & 0x0F00) >> 8] * 5;
+			pc += 2;
 			break;
 		}
 		case 0x0033: // 0xFx33 - LD B, Vx
 		{
-			// TODO : Vx = BCD [I, I+1, I+2]
+			// [I, I+1, I+2] = Vx BCD
+			mem[I] = (V[(opcode & 0x0F00) >> 8]) / 100;
+			mem[I + 1] = ((V[(opcode & 0x0F00) >> 8]) % 100) / 10;
+			mem[I + 2] = (V[(opcode & 0x0F00) >> 8]) % 10;
+			pc += 2;
 			break;
 		}
 		case 0x0055: // 0xFx55 - LD [I], Vx
 		{
-			// TODO : I ~ I+0xF = V[0x0-0xF]
+			// I ~ I+0xF = V[0x0-0xF]
+			for (int i = 0; i <= ((opcode & 0x0F00) >> 8); i++)
+				mem[I + i] = V[i];
+			I += ((opcode & 0x0F00) >> 8) + 1;
+			pc += 2;
 			break;
 		}
 		case 0x0065: // 0xFx65 - LD Vx, [I]
 		{
-			// TODO : V[0x0-0xF] = I ~ I+0xF
+			// V[0x0-0xF] = I ~ I+0xF
+			for (int i = 0; i <= ((opcode & 0x0F00) >> 8); i++)
+				V[i] = mem[I + i];
+			I += ((opcode & 0x0F00) >> 8) + 1;
+			pc += 2;
 			break;
 		}
 		default: // Unknown Instruction

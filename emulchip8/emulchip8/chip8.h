@@ -10,6 +10,8 @@
 #define __CHIP8_H__
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 const unsigned char chip8_hex[] = {
 	0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
