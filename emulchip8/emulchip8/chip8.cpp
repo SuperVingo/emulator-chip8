@@ -1,3 +1,5 @@
+#pragma warning(disable:4996)
+
 #include "chip8.h"
 
 void Chip8::Initialize()
@@ -48,6 +50,7 @@ void Chip8::ChipCycle()
 			break;
 		}
 		}
+		break;
 	}
 	case 0x1000: // 0x1nnn - JP Addr
 	{
@@ -190,6 +193,7 @@ void Chip8::ChipCycle()
 			break;
 		}
 		}
+		break;
 	}
 	case 0x9000: // 0x9xy0 - SNE Vx, Vy
 	{
@@ -235,7 +239,7 @@ void Chip8::ChipCycle()
 			unsigned char t = mem[I + y];
 			for (int x = 0; x < 0x8; x++)
 			{
-				if (t & (0x01 << x)) {
+				if (t & (0x80 >> x)) {
 					//Collision Check
 					if (gfx[64 * (vy + y) + vx + x] == 1)
 						V[0xF] = 1;
@@ -276,6 +280,7 @@ void Chip8::ChipCycle()
 			break;
 		}
 		}
+		break;
 	}
 	case 0xF000:
 	{
@@ -372,6 +377,7 @@ void Chip8::ChipCycle()
 			break;
 		}
 		}
+		break;
 	}
 	default: // Unreachable
 	{
@@ -379,9 +385,19 @@ void Chip8::ChipCycle()
 		break;
 	}
 	}
+
+	if (delay_timer > 0)
+		--delay_timer;
+
+	if (sound_timer > 0)
+	{
+		if (sound_timer == 1)
+			//printf("BEEP!\n");
+		--sound_timer;
+	}
 }
 
-bool Chip8::LoadProgram(char* file)
+bool Chip8::LoadProgram(const char* file)
 {
 	FILE* fp;
 	fp = fopen(file, "rb");
@@ -393,6 +409,7 @@ bool Chip8::LoadProgram(char* file)
 		unsigned char t[0x2];
 		fread(t, 1, 1, fp);
 		mem[0x200 + i] = t[0];
+		i++;
 	}
 
 	return true;
