@@ -33,7 +33,7 @@ const unsigned char chip8_hex[] = {
 };
 
 class Chip8 {
-private:
+public:
 	// 4KB Memory
 	/*
 	* 0x000 ~ 0x1FF -> Interpreter, Reserved, Hex Font 
@@ -59,6 +59,7 @@ private:
 
 	// Graphics
 	unsigned char gfx[64 * 32];
+	bool drawFlag;
 
 	//KeyPad
 	unsigned char key[16];
@@ -66,5 +67,6 @@ private:
 public:
 	void Initialize();
 	void ChipCycle();
+	bool LoadProgram(char* file);
 };
 #endif /*__CHIP8_H__*/

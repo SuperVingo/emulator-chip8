@@ -30,6 +30,7 @@ void Chip8::ChipCycle()
 			// Clear The Display
 			for (int i = 0; i < 64 * 32; i++)
 				gfx[i] = 0;
+			drawFlag = true;
 			pc += 2;
 			break;
 		}
@@ -221,7 +222,31 @@ void Chip8::ChipCycle()
 	}
 	case 0xD000: // 0xDxyn - DRW Vx, Vy, nibble
 	{
-		// TODO : Display n bytes sprite, starting at I, (Vx, Vy), set VF = Collision
+		// Display n bytes sprite, starting at I, (Vx, Vy), set VF = Collision
+		unsigned char vx = V[(opcode & 0x0F00) >> 8];
+		unsigned char vy = V[(opcode & 0x00F0) >> 4];
+		unsigned char n = (opcode & 0x000F);
+
+		// Clear Collision
+		V[0xF] = 0;
+
+		for (int y = 0; y < n; y++)
+		{
+			unsigned char t = mem[I + y];
+			for (int x = 0; x < 0x8; x++)
+			{
+				if (t & (0x01 << x)) {
+					//Collision Check
+					if (gfx[64 * (vy + y) + vx + x] == 1)
+						V[0xF] = 1;
+					gfx[64 * (vy + y) + vx + x] ^= 1;
+				}
+			}
+		}
+
+		drawFlag = true;
+		pc += 2;
+		
 		break;
 	}
 	case 0xE000:
@@ -264,7 +289,22 @@ void Chip8::ChipCycle()
 		}
 		case 0x000A: // 0xFx0A - LD Vx, K
 		{
-			// TODO : Waiting for key input, and store in Vx
+			// Waiting for key input, and store in Vx
+			bool flag = false;
+			for (int i = 0; i < 0x10; i++)
+			{
+				if (key[i] != 0)
+				{
+					V[(opcode ^ 0x0F00) >> 8] = i;
+					flag = true;
+				}
+			}
+
+			// if key was not pressed, try next cycle
+			if (!flag)
+				break;
+
+			pc += 2;
 			break;
 		}
 		case 0x0015: // 0xFx15 - LD DT, Vx
@@ -339,4 +379,21 @@ void Chip8::ChipCycle()
 		break;
 	}
 	}
+}
+
+bool Chip8::LoadProgram(char* file)
+{
+	FILE* fp;
+	fp = fopen(file, "rb");
+	if (fp == NULL)
+		return false;
+	
+	int i = 0;
+	while (!feof(fp)) {
+		unsigned char t[0x2];
+		fread(t, 1, 1, fp);
+		mem[0x200 + i] = t[0];
+	}
+
+	return true;
 }
