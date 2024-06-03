@@ -23,6 +23,7 @@ void Chip8::ChipCycle()
 	// Fetch opcode from [pc], 2bytes
 	opcode = mem[pc] << 8 | mem[pc + 1];
 
+	// Decode & Execute
 	switch (opcode & 0xF000) {
 	case 0x0000:
 	{

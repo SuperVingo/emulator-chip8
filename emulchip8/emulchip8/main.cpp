@@ -16,7 +16,7 @@ int main(int argc, char** argv)
 {
     // Initialize and Load Program
     chip.Initialize();
-    if (!chip.LoadProgram("pong2.c8"))
+    if (!chip.LoadProgram("prog.c8"))
         return 0;
 
     // Initialize GLUT
@@ -39,7 +39,7 @@ int main(int argc, char** argv)
 
 void drawScreen()
 {
-    /*system("cls");
+    system("cls");
     for (int y = 0; y < 32; y++)
     {
         for (int x = 0; x < 64; x++)
@@ -54,7 +54,7 @@ void drawScreen()
             }
         }
         printf("\n");
-    }*/
+    }
     // Display Function
     for (int y = 0; y < 32; y++)
     {
